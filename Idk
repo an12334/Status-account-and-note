@@ -1,0 +1,166 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local Stats = game:GetService("Stats")
+local CoreGui = game:GetService("CoreGui")
+
+local LocalPlayer = Players.LocalPlayer
+local FileName = "StatusNote_" .. LocalPlayer.UserId .. ".txt"
+
+local function LoadNote()
+    if isfile and isfile(FileName) then return readfile(FileName) end
+    return "Ghi chú..." 
+end
+
+local function SaveNote(content)
+    if writefile then writefile(FileName, content) end
+end
+
+local ScreenGui = Instance.new("ScreenGui")
+local MainFrame = Instance.new("Frame")
+local UICorner = Instance.new("UICorner")
+local StatsLabel = Instance.new("TextLabel")
+local NoteDisplay = Instance.new("TextLabel")
+local NoteInput = Instance.new("TextBox")
+local LockButton = Instance.new("ImageButton")
+local ResetNoteButton = Instance.new("TextButton")
+
+if getgenv and getgenv().gethui then ScreenGui.Parent = getgenv().gethui() else ScreenGui.Parent = CoreGui end
+
+MainFrame.Name = "StatusHub_FinalLock"
+MainFrame.Parent = ScreenGui
+MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+MainFrame.BackgroundTransparency = 0.2
+MainFrame.Position = UDim2.new(1, -190, 0.04, 0) 
+MainFrame.Size = UDim2.new(0, 175, 0, 125)
+MainFrame.Active = true
+UICorner.Parent = MainFrame
+UICorner.CornerRadius = UDim.new(0, 6)
+
+local UserLabel = Instance.new("TextLabel", MainFrame)
+UserLabel.Text = "👤 " .. LocalPlayer.Name
+UserLabel.Size = UDim2.new(0, 130, 0, 20)
+UserLabel.Position = UDim2.new(0, 8, 0, 5)
+UserLabel.Font = Enum.Font.GothamBold
+UserLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+UserLabel.TextSize = 12
+UserLabel.TextXAlignment = "Left"
+UserLabel.BackgroundTransparency = 1
+
+StatsLabel.Parent = MainFrame
+StatsLabel.Position = UDim2.new(0, 8, 0, 25)
+StatsLabel.Size = UDim2.new(0, 160, 0, 45)
+StatsLabel.Font = Enum.Font.Gotham
+StatsLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+StatsLabel.TextSize = 10
+StatsLabel.TextXAlignment = "Left"
+StatsLabel.BackgroundTransparency = 1
+
+NoteDisplay.Parent = MainFrame
+NoteDisplay.Position = UDim2.new(0, 8, 0, 70)
+NoteDisplay.Size = UDim2.new(0, 159, 0, 22)
+NoteDisplay.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+NoteDisplay.Text = LoadNote()
+NoteDisplay.TextColor3 = Color3.fromRGB(255, 255, 0)
+NoteDisplay.Font = Enum.Font.Gotham
+NoteDisplay.TextSize = 11
+Instance.new("UICorner", NoteDisplay)
+
+NoteInput.Parent = NoteDisplay
+NoteInput.Size = UDim2.new(1, 0, 1, 0)
+NoteInput.BackgroundTransparency = 1
+NoteInput.Text = ""
+NoteInput.TextColor3 = Color3.fromRGB(255, 255, 0)
+NoteInput.TextSize = 11
+NoteInput.Visible = true -- Mặc định mở
+
+ResetNoteButton.Parent = MainFrame
+ResetNoteButton.Position = UDim2.new(0, 8, 0, 97)
+ResetNoteButton.Size = UDim2.new(0, 159, 0, 20)
+ResetNoteButton.BackgroundColor3 = Color3.fromRGB(120, 0, 0)
+ResetNoteButton.Text = "ĐẶT LẠI GHI CHÚ"
+ResetNoteButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ResetNoteButton.Font = Enum.Font.GothamBold
+ResetNoteButton.TextSize = 9
+Instance.new("UICorner", ResetNoteButton)
+
+LockButton.Parent = MainFrame
+LockButton.Position = UDim2.new(1, -24, 0, 6)
+LockButton.Size = UDim2.new(0, 18, 0, 18)
+LockButton.BackgroundTransparency = 1
+LockButton.Image = "rbxassetid://3926305904" 
+LockButton.ImageRectOffset = Vector2.new(144, 4) -- Icon Mở
+LockButton.ImageRectSize = Vector2.new(24, 24)
+LockButton.ImageColor3 = Color3.fromRGB(0, 255, 0)
+
+local isLocked = false
+local StartTime = os.clock()
+
+task.spawn(function()
+    while task.wait(0.5) do
+        local fps = math.floor(1 / RunService.Heartbeat:Wait())
+        local ping = math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue())
+        local runTime = os.clock() - StartTime
+        local h, m, s = math.floor(runTime/3600), math.floor((runTime%3600)/60), math.floor(runTime%60)
+        StatsLabel.Text = string.format("Thời gian: %02d:%02d:%02d\nFPS: %d\nPing: %d ms", h, m, s, fps, ping)
+    end
+end)
+
+LockButton.MouseButton1Click:Connect(function()
+    isLocked = not isLocked
+    if isLocked then
+        LockButton.ImageRectOffset = Vector2.new(4, 4) -- Icon Đóng
+        LockButton.ImageColor3 = Color3.fromRGB(255, 0, 0)
+        NoteInput.Visible = false -- BIẾN MẤT LUÔN Ô NHẬP LIỆU
+        ResetNoteButton.TextTransparency = 0.6
+        ResetNoteButton.BackgroundColor3 = Color3.fromRGB(50, 0, 0)
+    else
+        LockButton.ImageRectOffset = Vector2.new(144, 4) -- Icon Mở
+        LockButton.ImageColor3 = Color3.fromRGB(0, 255, 0)
+        NoteInput.Visible = true -- HIỆN LẠI Ô NHẬP LIỆU
+        ResetNoteButton.TextTransparency = 0
+        ResetNoteButton.BackgroundColor3 = Color3.fromRGB(120, 0, 0)
+    end
+end)
+
+NoteInput.FocusLost:Connect(function(enter)
+    if enter or not isLocked then
+        local txt = NoteInput.Text
+        if txt ~= "" then
+            NoteDisplay.Text = txt
+            SaveNote(txt)
+        end
+        NoteInput.Text = "" -- Xóa text tạm trong box
+    end
+end)
+
+-- Reset ghi chú
+ResetNoteButton.MouseButton1Click:Connect(function()
+    if not isLocked then
+        NoteDisplay.Text = "..."
+        SaveNote("...")
+    end
+end)
+
+-- Kéo thả (Drag)
+local dragging, dragStart, startPos
+MainFrame.InputBegan:Connect(function(input)
+    if not isLocked and (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
+        dragging = true
+        dragStart = input.Position
+        startPos = MainFrame.Position
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and not isLocked and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - dragStart
+        MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = false
+    end
+end)
