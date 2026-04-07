@@ -1,0 +1,144 @@
+local HttpService = game:GetService("HttpService")
+local player = game:GetService("Players").LocalPlayer
+local CoreGui = game:GetService("CoreGui")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local Stats = game:GetService("Stats")
+
+-- LINK API CỦA BẠN
+local apiUrl = "https://sweet_blac-6ba.b.jrnm.app/api/order/" .. player.Name
+
+local function getData()
+    local s, r = pcall(function() return game:HttpGet(apiUrl) end)
+    if s then return HttpService:JSONDecode(r) end
+    return nil
+end
+
+local res = getData()
+if res and res.success then
+    local info = res.data
+    
+    if CoreGui:FindFirstChild("UtaFinalV4") then CoreGui.UtaFinalV4:Destroy() end
+
+    local sg = Instance.new("ScreenGui")
+    sg.Name = "UtaFinalV4"
+    sg.Parent = CoreGui
+    sg.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+    -- KHUNG CHỨA CHÍNH (Nằm vùng xanh phía trên)
+    local container = Instance.new("Frame")
+    container.Size = UDim2.new(0, 350, 0, 160)
+    container.Position = UDim2.new(0.5, -175, 0.05, 0)
+    container.BackgroundTransparency = 1
+    container.Parent = sg
+
+    -- 1. BẢNG THÔNG TIN (Dài ngang chuẩn ảnh)
+    local main = Instance.new("Frame")
+    main.Size = UDim2.new(0, 350, 0, 105)
+    main.Position = UDim2.new(0, 0, 0, 0)
+    main.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
+    main.BackgroundTransparency = 0.1
+    main.BorderSizePixel = 0
+    main.Parent = container
+    Instance.new("UICorner", main).CornerRadius = UDim.new(0, 10)
+
+    -- Tên đơn cày (Chữ Vàng - Đã xóa #)
+    local jobLabel = Instance.new("TextLabel")
+    jobLabel.Size = UDim2.new(0.65, 0, 0, 30)
+    jobLabel.Position = UDim2.new(0, 15, 0, 10)
+    jobLabel.Text = info.job
+    jobLabel.TextColor3 = Color3.fromRGB(255, 210, 60)
+    jobLabel.TextXAlignment = "Left"
+    jobLabel.Font = Enum.Font.GothamBold
+    jobLabel.TextSize = 16
+    jobLabel.BackgroundTransparency = 1
+    jobLabel.Parent = main
+
+    -- Trạng thái (Nút Xanh Dương)
+    local statusLabel = Instance.new("TextLabel")
+    statusLabel.Size = UDim2.new(0, 100, 0, 26)
+    statusLabel.Position = UDim2.new(1, -115, 0, 12)
+    statusLabel.BackgroundColor3 = Color3.fromRGB(50, 110, 255)
+    statusLabel.Text = info.status:upper()
+    statusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    statusLabel.Font = Enum.Font.GothamBold
+    statusLabel.TextSize = 11
+    statusLabel.Parent = main
+    Instance.new("UICorner", statusLabel).CornerRadius = UDim.new(0, 8)
+
+    -- Tên acc và Ghi chú
+    local detailLabel = Instance.new("TextLabel")
+    detailLabel.Size = UDim2.new(1, -30, 0, 35)
+    detailLabel.Position = UDim2.new(0, 15, 0, 45)
+    detailLabel.Text = "Tên: " .. player.Name .. "\nGhi chú: " .. info.job
+    detailLabel.TextColor3 = Color3.fromRGB(190, 190, 190)
+    detailLabel.TextXAlignment = "Left"
+    detailLabel.TextYAlignment = "Top"
+    detailLabel.BackgroundTransparency = 1
+    detailLabel.Font = Enum.Font.Gotham
+    detailLabel.TextSize = 13
+    detailLabel.Parent = main
+
+    -- CHỈ SỐ FPS & PING (Cập nhật mỗi 0.5s)
+    local statsLabel = Instance.new("TextLabel")
+    statsLabel.Size = UDim2.new(1, -30, 0, 20)
+    statsLabel.Position = UDim2.new(0, 15, 1, -25)
+    statsLabel.Text = "FPS: -- | Ping: -- ms"
+    statsLabel.TextColor3 = Color3.fromRGB(80, 255, 80) -- Màu xanh lá
+    statsLabel.TextXAlignment = "Left"
+    statsLabel.Font = Enum.Font.GothamMedium
+    statsLabel.TextSize = 12
+    statsLabel.BackgroundTransparency = 1
+    statsLabel.Parent = main
+
+    -- 2. LOGO UTA (Nằm dưới bảng)
+    local utaBtn = Instance.new("TextButton")
+    utaBtn.Size = UDim2.new(0, 45, 0, 45)
+    utaBtn.Position = UDim2.new(0.5, -22, 0, 115) -- Nằm dưới
+    utaBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    utaBtn.Text = "UTA"
+    utaBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    utaBtn.Font = Enum.Font.GothamBold
+    utaBtn.TextSize = 13
+    utaBtn.ZIndex = 10
+    utaBtn.Parent = container
+    Instance.new("UICorner", utaBtn).CornerRadius = UDim.new(1, 0)
+    Instance.new("UIStroke", utaBtn).Color = Color3.fromRGB(120, 120, 120)
+
+    -- Cập nhật FPS/Ping mỗi 0.5 giây
+    task.spawn(function()
+        while task.wait(0.5) do
+            local fps = math.floor(1 / RunService.RenderStepped:Wait())
+            local ping = math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue())
+            statsLabel.Text = "FPS: " .. fps .. " | Ping: " .. ping .. " ms"
+        end
+    end)
+
+    -- Bấm Logo ẩn/hiện bảng
+    utaBtn.MouseButton1Click:Connect(function()
+        main.Visible = not main.Visible
+    end)
+
+    -- Kéo thả cả cụm bằng Logo
+    local dragging, dragStart, startPos
+    utaBtn.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = container.Position
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            local delta = input.Position - dragStart
+            container.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = false
+        end
+    end)
+end
