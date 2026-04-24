@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roblox Account Management</title>
+    <script>
+        function saveOrder() {
+            let order = document.getElementById('orderInput').value;
+            localStorage.setItem('farmingOrder', order);
+            alert('Farming order saved!');
+        }
+
+        function viewHistory() {
+            let history = localStorage.getItem('history') || 'No history yet.';
+            alert(history);
+        }
+
+        function showSummary() {
+            let summaryData = 'Total orders: ' + (localStorage.getItem('history') ? localStorage.getItem('history').split(',').length : 0);
+            alert(summaryData);
+        }
+
+        function checkAccountStatus() {
+            let status = localStorage.getItem('accountStatus') || 'Account is active.';
+            alert(status);
+        }
+    </script>
+</head>
+<body>
+    <h1>Roblox Account Management System</h1>
+    <div>
+        <h2>Đơn cày (Create Farming Order)</h2>
+        <input type="text" id="orderInput" placeholder="Enter farming order" />
+        <button onclick="saveOrder()">Save Order</button>
+    </div>
+    <div>
+        <h2>Lịch sử (History)</h2>
+        <button onclick="viewHistory()">View History</button>
+    </div>
+    <div>
+        <h2>Tổng kết (Summary)</h2>
+        <button onclick="showSummary()">Show Summary</button>
+    </div>
+    <div>
+        <h2>Trạng thái acc (Account Status)</h2>
+        <button onclick="checkAccountStatus()">Check Status</button>
+    </div>
+</body>
+</html>
